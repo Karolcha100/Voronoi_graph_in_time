@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 
-def saver(df: pd.DataFrame, name: str) -> None:
+def saver(df: pd.DataFrame, name: str, folder: str = "small_data") -> None:
     """
     Saving function for your DataFrames
 
@@ -16,7 +16,7 @@ def saver(df: pd.DataFrame, name: str) -> None:
     :type name: str
     """
 
-    if os.path.isfile(f"../kc459385_saves/{name}"):
-        raise FileExistsError(f"You moron! {f"kc459385_saves/{name}.csv"} EXISTS!!!")
+    if os.path.isfile(f"{folder}/{name}"):
+        raise FileExistsError(f"You moron! {f"{folder}/{name}.csv"} EXISTS!!!")
 
-    df.to_csv(f"../kc459385_saves/{name}.csv")
+    df.to_csv(f"{folder}/{name}.csv", index=False)
