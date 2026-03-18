@@ -9,4 +9,10 @@ from utils.pandas_utils import saver
 
 
 
-class 
+class MakeGraphFromSingleTime:
+    def __init__(
+            self,
+            
+
+        ) -> None:
+        pass
