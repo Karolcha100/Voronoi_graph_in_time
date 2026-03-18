@@ -18,9 +18,11 @@ The data were sourced from a sample dataset, presented by the Instructor of the 
 
 #### Presented Analysis:
 
-Presented Analysis and its pipeline is done as implementation of idea, vaguely expressed by me during conversation with Instructor.
+Presented Analysis and its pipeline is done as implementation of idea, vaguely expressed by me during conversation between class and Instructor.
 
 It is not a part of any assigment.
+
+**(This Idea would not be present without all of collegues in class, taking part in the discussion)**
 
 ---
 
