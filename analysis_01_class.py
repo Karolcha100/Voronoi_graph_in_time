@@ -3,6 +3,8 @@ import networkx as nx
 import numpy as np
 from scipy.spatial import Voronoi
 from collections.abc import Callable
+import pickle
+import matplotlib.pyplot as plt
 
 
 
@@ -23,10 +25,14 @@ class MakeGraphFromSingleTime:
             df: pd.DataFrame,
             cell_size_col_name: str = 'Nuclear_size',
             tracked_ratios_cols_names: list[str] = ["ERKKTR_ratio", "FoxO3A_ratio"],
-            xy_dimensions_cols_names: tuple[str, str] = ("objNuclei_Location_Center_X", "objNuclei_Location_Center_Y"),
+            xy_dimensions_cols_names: list[str] = ["objNuclei_Location_Center_X", "objNuclei_Location_Center_Y"],
             cell_size_based_on_area_func: None|Callable[[float], tuple[float, float]] = None,
-            verbose: bool = False
+            verbosity: int = 0,
+            object_log_id: str = "MakeGraphFromSingleTime",
         ) -> None:
+
+        self._verbosity: int = verbosity
+        self._object_log_id: str = object_log_id
 
         self._calculate_max_cell_xy: Callable[[float], tuple[float, float]]
 
@@ -35,12 +41,19 @@ class MakeGraphFromSingleTime:
         else:
             self._calculate_max_cell_xy = cell_size_based_on_area_func
 
+        if self._verbosity > 0:
+            print(f"[{self._object_log_id}] Starting..")
+        
 
         vor_diag: Voronoi = Voronoi(self._extract_points_from_df(df, dims_cols=xy_dimensions_cols_names))
         correct_bbox: tuple[float, float, float, float] = self._estimate_correct_bbox(
             self._extract_max_area_from_df(df, cell_size_col=cell_size_col_name),
             self._extract_bbox_from_df(df, dims_cols=xy_dimensions_cols_names)
         )
+        
+        if self._verbosity > 0:
+            print(f"[{self._object_log_id}] Done Voronoi.")
+
 
         self._vor_graph: nx.Graph = nx.Graph(
             self._calculate_correct_edges_for_vor_graph(
@@ -56,13 +69,16 @@ class MakeGraphFromSingleTime:
             self._extract_points_from_df(df, xy_dimensions_cols_names)
         )
 
+        if self._verbosity > 0:
+            print(f"[{self._object_log_id}] Done Graph with Attributes.")
+
 
     @staticmethod
     def _extract_cell_ratios_from_df(df: pd.DataFrame, ratios_cols: list[str]) -> dict[str, np.ndarray]:
         return {ratio_name: df[ratio_name].to_numpy() for ratio_name in ratios_cols}
 
     @staticmethod
-    def _extract_points_from_df(df: pd.DataFrame, dims_cols: tuple[str, str]) -> np.ndarray:
+    def _extract_points_from_df(df: pd.DataFrame, dims_cols: list[str]) -> np.ndarray:
         return df[dims_cols].to_numpy()
     
     @staticmethod
@@ -74,7 +90,7 @@ class MakeGraphFromSingleTime:
         return df[cell_size_col].to_numpy()
     
     @staticmethod
-    def _extract_bbox_from_df(df: pd.DataFrame, dims_cols: tuple[str, str]) -> tuple[float, float, float, float]:
+    def _extract_bbox_from_df(df: pd.DataFrame, dims_cols: list[str]) -> tuple[float, float, float, float]:
         return (
             df[dims_cols[0]].min(), 
             df[dims_cols[0]].max(),
@@ -156,7 +172,7 @@ class MakeGraphFromSingleTime:
             nx.set_node_attributes(
                 self._vor_graph,
                 {cell_idx: ratio for cell_idx, ratio in enumerate(cells_ratios[ratio_key])},
-                "ratio_key"
+                ratio_key
             )
 
         nodes_pos: dict[int, np.ndarray] = {cell_idx: cell_pos for cell_idx, cell_pos in enumerate(cells_points)}
@@ -176,4 +192,18 @@ class MakeGraphFromSingleTime:
         nx.set_edge_attributes(self._vor_graph, edges_attrs_dict, name = 'dist')
 
 
-        pass
+    def save_graph(self, path: str) -> None:
+        with open(path, "wb") as file:
+            pickle.dump(self._vor_graph, file)
+
+    def save_graph_pic(self, path: str) -> None:
+        nx.draw(
+            self._vor_graph, 
+            node_size=[np.pi * (value+0.5) ** 2.5 for value in nx.get_node_attributes(self._vor_graph, "ERKKTR_ratio").values()], 
+            width = 0.5, 
+            with_labels=False, 
+            pos=nx.get_node_attributes(self._vor_graph, "cell_pos"), 
+            node_color = 'C0',
+        )
+        plt.savefig(path)
+        plt.close()
