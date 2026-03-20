@@ -1,4 +1,5 @@
 untracked/
+untracked.ipynb
 venv/
 __pycache__/
 .vscode/
